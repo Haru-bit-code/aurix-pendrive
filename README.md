@@ -1,3 +1,30 @@
+# AURIX
+
+A portable, multi-agent AI workbench that runs entirely from a USB drive — no cloud, no
+subscription, no internet required after setup. Plug it into any Mac, Windows, or Linux
+machine and it boots a local LLM stack (llama.cpp + Qwen models) behind a full agent
+system: task planning with review cycles, a permission manager that gates every
+file/shell/browser action, long-term memory, document RAG, and a background task queue
+with checkpointing — all through a custom web UI.
+
+![AURIX interface](screenshot.png)
+
+## Why
+Most local-LLM setups are a single chat window. AURIX is closer to a small operating
+system for agents: a **Team** mode plans a goal into steps and hands each to a
+specialist (Researcher, Developer, Analyst, Operator), a reviewer checks the result and
+triggers a fix round if needed, and every sensitive action — writing a file, running
+code, clicking a browser button — waits for your explicit approval before it runs.
+
+## Highlights
+- **Zero cloud dependency** — models, memory, and documents all live on the drive
+- **Multi-agent orchestration** — plan → execute → review → fix, not just prompt → reply
+- **Permission-gated tool use** — safe/sensitive/dangerous tiers, nothing silent
+- **Background tasks** — schedule a goal (once, interval, or daily), it runs unattended
+  with checkpointed progress and automatic retry on failure
+- **RAG knowledge base** — drop in PDFs/docs, agents search them automatically
+- **Cross-platform launcher** — auto-detects CPU/GPU/RAM and picks the right binaries
+
 # AURIX (portable local AI workbench)
 
 Start: double-click `start.command` (Mac), `start.bat` (Windows) or run `./start.sh` (Linux).
