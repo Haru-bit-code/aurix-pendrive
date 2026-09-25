@@ -25,7 +25,7 @@ code, clicking a browser button — waits for your explicit approval before it r
 - **RAG knowledge base** — drop in PDFs/docs, agents search them automatically
 - **Cross-platform launcher** — auto-detects CPU/GPU/RAM and picks the right binaries
 
-# AURIX (portable local AI workbench)
+## Setup & usage
 
 Start: double-click `start.command` (Mac), `start.bat` (Windows) or run `./start.sh` (Linux).
 AURIX opens at http://127.0.0.1:8765. The first start on a computer needs internet once:
