@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AURIX</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='none' stroke='%237FA8FF' stroke-width='4'/><circle cx='16' cy='16' r='3' fill='%237FA8FF'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="shell" id="shell">
+
+  <!-- Activity rail -->
+  <nav class="rail" aria-label="Panels">
+    <div class="logo" title="AURIX"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11"/><circle cx="16" cy="16" r="3" class="core"/></svg></div>
+    <button data-panel="chats" class="active" title="Chats (Ctrl+Shift+C)" aria-label="Chats">
+      <svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></button>
+    <button data-panel="files" title="Workspace files (Ctrl+Shift+E)" aria-label="Workspace files">
+      <svg viewBox="0 0 24 24"><path d="M3 6h7l2 2h9v11H3z"/></svg></button>
+    <button data-panel="tasks" title="Tasks and approvals (Ctrl+Shift+T)" aria-label="Tasks">
+      <svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg><span class="badge" id="taskBadge" hidden></span></button>
+    <button data-panel="knowledge" title="Knowledge and memory (Ctrl+Shift+K)" aria-label="Knowledge">
+      <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7M8 11h5"/></svg></button>
+    <button data-panel="models" title="Models (Ctrl+Shift+M)" aria-label="Models">
+      <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg></button>
+    <button data-panel="settings" title="Settings (Ctrl+,)" aria-label="Settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
+  </nav>
+
+  <!-- Side panel -->
+  <aside class="panel" id="panel">
+    <section data-view="chats">
+      <header><h2>Chats</h2><button class="icon-btn" id="newChat" title="New chat (Ctrl+K)">New</button></header>
+      <div class="list" id="conversations"></div>
+    </section>
+
+    <section data-view="files" hidden>
+      <header><h2>Workspace</h2><button class="icon-btn" id="refreshFiles" title="Refresh">Refresh</button></header>
+      <div class="crumbs" id="crumbs"></div>
+      <div class="list" id="fileList"></div>
+    </section>
+
+    <section data-view="tasks" hidden>
+      <header><h2>Tasks</h2><button class="icon-btn" id="refreshTasks">Refresh</button></header>
+      <div id="approvals"></div>
+      <form class="settings taskform" id="taskForm">
+        <label>Goal <small>A task runs in the background until it's done, even with this tab closed.</small>
+          <textarea name="goal" rows="3" required placeholder="e.g. Research 5 interior design studios in Kochi and save a comparison table to studios.md"></textarea></label>
+        <label>Who works on it<select name="agent"></select></label>
+        <label>Autonomy<select name="autonomy">
+          <option value="ask">Ask before any change</option>
+          <option value="trusted">Trusted: ask only before code and commands</option></select></label>
+        <label>When<select name="when">
+          <option value="now">Now</option><option value="once">Once, at a time</option>
+          <option value="interval">Every few minutes</option><option value="daily">Every day at</option></select></label>
+        <label data-when="once" hidden>Time<input type="datetime-local" name="at"></label>
+        <label data-when="interval" hidden>Minutes between runs<input type="number" name="minutes" min="5" value="60"></label>
+        <label data-when="daily" hidden>Time of day<input type="time" name="time" value="09:00"></label>
+        <label class="check"><input type="checkbox" name="web" checked> Allow web access</label>
+        <div class="form-actions"><button type="submit" class="primary">Start task</button><span id="taskMsg" role="status"></span></div>
+      </form>
+      <div class="list" id="taskList"></div>
+    </section>
+
+    <section data-view="knowledge" hidden>
+      <header><h2>Knowledge</h2></header>
+      <div class="settings">
+        <fieldset>
+          <legend>Documents</legend>
+          <p class="hint flush">Agents search these with search_documents. Text, code, Markdown, PDF and Word files.</p>
+          <label class="upload"><input type="file" id="docUpload" multiple accept=".txt,.md,.pdf,.docx,.csv,.json,.py,.js,.ts,.html,.yaml,.yml,.toml,.sql"> Add documents</label>
+          <div id="docList" class="klist"></div>
+          <label>Test a search<input type="search" id="docSearch" placeholder="Search your documents"></label>
+          <div id="docHits" class="klist"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Long-term memory</legend>
+          <p class="hint flush">Facts AURIX keeps about you and your projects. Relevant ones are added to every prompt.</p>
+          <form id="factForm" class="inline-form"><input name="text" placeholder="e.g. I deploy on Oracle Cloud" aria-label="New memory"><button class="icon-btn">Add</button></form>
+          <div id="factList" class="klist"></div>
+        </fieldset>
+      </div>
+    </section>
+
+    <section data-view="models" hidden>
+      <header><h2>Models</h2><button class="icon-btn" id="refreshModels" title="Refresh">Refresh</button></header>
+      <div class="doctor" id="doctor"></div>
+      <p class="hint">Up to two models stay in memory (set MAX_MODELS in the launcher). Loading a third unloads the least recently used.</p>
+      <div class="list" id="modelList"></div>
+    </section>
+
+    <section data-view="settings" hidden>
+      <header><h2>Settings</h2></header>
+      <form class="settings" id="settingsForm">
+        <fieldset>
+          <legend>Models</legend>
+          <label>Fast tier <small>General agent</small><select name="models.fast"></select></label>
+          <label>Strong tier <small>Researcher, Developer, Analyst</small><select name="models.strong"></select></label>
+          <label>Code tier <small>Developer agent (falls back to Strong)</small><select name="models.code"></select></label>
+          <label>Vision tier <small>Used when you attach an image</small><select name="models.vision"></select></label>
+          <label>Default model <small>Overrides the tiers for every request</small><select name="model_override"></select></label>
+        </fieldset>
+        <fieldset>
+          <legend>Generation</legend>
+          <label>Temperature <output data-for="temperature"></output>
+            <input type="range" name="temperature" min="0" max="1.5" step="0.05"></label>
+          <label>Top-p <output data-for="top_p"></output>
+            <input type="range" name="top_p" min="0.05" max="1" step="0.05"></label>
+          <label>Max reply tokens <small>0 = no limit</small><input type="number" name="max_tokens" min="0" step="64"></label>
+          <label class="check"><input type="checkbox" name="thinking"> Thinking mode <small>Slower, reasons before answering</small></label>
+        </fieldset>
+        <fieldset>
+          <legend>Agent</legend>
+          <label>Custom instructions <small>Added to every system prompt</small>
+            <textarea name="custom_instructions" rows="4" placeholder="e.g. I use Python 3.12 and FastAPI. Prefer type hints."></textarea></label>
+          <label>Max tool steps per request<input type="number" name="max_tool_steps" min="1" max="25"></label>
+          <label>Past messages sent as context<input type="number" name="history_messages" min="0" max="100"></label>
+          <label class="check"><input type="checkbox" name="web_default"> Web access on for new chats</label>
+        </fieldset>
+        <fieldset>
+          <legend>Memory</legend>
+          <label class="check"><input type="checkbox" name="memory_in_prompt"> Add relevant long-term memories to prompts</label>
+        </fieldset>
+        <fieldset>
+          <legend>Team and tasks</legend>
+          <label>Default task autonomy<select name="autonomy_default"><option value="ask">Ask before changes</option><option value="trusted">Trusted</option></select></label>
+          <label>Tasks running at once <small>1 keeps a fanless Mac cool</small><input type="number" name="max_concurrent_tasks" min="1" max="3"></label>
+          <label>Review rounds <small>Fix-and-review cycles in Team mode</small><input type="number" name="review_rounds" min="0" max="3"></label>
+        </fieldset>
+        <fieldset>
+          <legend>Browser and voice</legend>
+          <label class="check"><input type="checkbox" name="browser_headless"> Hide the automation browser window</label>
+          <label class="check"><input type="checkbox" name="voice_reply"> Read answers aloud</label>
+          <label>Voice language<input name="voice_lang" placeholder="en-US"></label>
+        </fieldset>
+        <fieldset>
+          <legend>n8n</legend>
+          <label>n8n URL<input name="n8n_url" placeholder="https://n8n.example.com"></label>
+          <label>API key <small>Only needed to list workflows</small><input type="password" name="n8n_api_key" autocomplete="off"></label>
+        </fieldset>
+        <fieldset>
+          <legend>Tool permissions</legend>
+          <div id="permList" class="perm-list"></div>
+        </fieldset>
+        <div class="form-actions">
+          <button type="submit" class="primary">Save settings</button>
+          <button type="button" id="resetSettings">Reset to defaults</button>
+          <span id="settingsMsg" role="status"></span>
+        </div>
+      </form>
+    </section>
+  </aside>
+
+  <!-- Session -->
+  <main class="session">
+    <header class="topbar">
+      <button class="icon-btn only-mobile" id="togglePanel" aria-label="Show panel">☰</button>
+      <h1 id="sessionTitle">New session</h1>
+      <div class="controls">
+        <label class="ctl">Agent<select id="agent"><option value="auto">Automatic</option></select></label>
+        <label class="ctl">Model<select id="model"><option value="">Per agent</option></select></label>
+        <label class="toggle" title="Let AURIX search and read web pages">
+          <input type="checkbox" id="web"><span class="track"><span class="thumb"></span></span>Web
+        </label>
+        <button class="icon-btn" id="toggleInspector" title="Run inspector (Ctrl+I)" aria-pressed="false">Inspector</button>
+      </div>
+    </header>
+
+    <section class="thread" id="thread" aria-live="polite">
+      <div class="empty" id="empty">
+        <div class="ghost" aria-hidden="true"><span>local</span><span>agents</span></div>
+        <h2 class="hero"><span>Build with your</span><span>local AI workbench</span></h2>
+        <p class="lede">Private models running from your pendrive. Agents, tools and files, all on this machine.</p>
+        <canvas id="orb" aria-hidden="true"></canvas>
+        <div class="starters">
+          <button data-prompt="List the files in my workspace and tell me what they are.">List my workspace files</button>
+          <button data-prompt="Write a Python script that prints the first 20 prime numbers, save it as primes.py, run it, and show me the output.">Write and run a Python script</button>
+          <button data-prompt="Explain the difference between a process and a thread, with a short Python example of each.">Explain processes vs threads</button>
+        </div>
+        <p class="where">Files live in <code id="workspacePath">data/workspace</code></p>
+      </div>
+    </section>
+
+    <form class="composer" id="composer">
+      <div class="attachments" id="attachments"></div>
+      <div class="box">
+        <label class="tool-btn" title="Add a document to the knowledge base"><input type="file" id="docInput" multiple hidden
+          accept=".txt,.md,.pdf,.docx,.csv,.json,.py,.js,.ts,.html,.yaml,.yml,.toml,.sql">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></label>
+        <label class="tool-btn" title="Attach an image"><input type="file" id="imageInput" accept="image/*" multiple hidden>
+          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg></label>
+        <button type="button" class="tool-btn" id="micBtn" title="Speak (click to start, click again to stop)" aria-pressed="false">
+          <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+        <textarea id="input" rows="1" placeholder="Ask AURIX, or describe a task" aria-label="Message"></textarea>
+        <button type="submit" id="send" class="send">Send</button>
+      </div>
+      <div class="keys"><kbd>Enter</kbd> send <kbd>Shift+Enter</kbd> new line <kbd>Ctrl+K</kbd> new chat <kbd>Ctrl+I</kbd> inspector</div>
+    </form>
+  </main>
+
+  <!-- Inspector -->
+  <aside class="inspector" id="inspector" hidden>
+    <header><h2>Run inspector</h2><button class="icon-btn" id="clearInspector">Clear</button></header>
+    <div class="events" id="events"></div>
+  </aside>
+</div>
+
+<footer class="statusbar" id="statusbar">
+  <span class="seg" id="sbServer"><i class="dot"></i>model server</span>
+  <span class="seg" id="sbModel">no model loaded</span>
+  <span class="seg" id="sbAgent">agent: auto</span>
+  <span class="seg" id="sbSpeed"></span>
+  <span class="seg grow" id="sbWorkspace"></span>
+  <span class="seg" id="sbVersion">AURIX</span>
+</footer>
+
+<dialog id="viewer">
+  <header>
+    <h2 id="viewerTitle"></h2><span id="viewerMeta"></span>
+    <div class="tabs" id="viewerTabs" hidden>
+      <button type="button" class="tab active" data-tab="preview">Preview</button>
+      <button type="button" class="tab" data-tab="source">Source</button>
+    </div>
+  </header>
+  <pre id="viewerBody"></pre>
+  <iframe id="viewerFrame" title="Page preview" hidden></iframe>
+  <div class="dialog-actions">
+    <a id="viewerOpen" class="icon-btn" target="_blank" rel="noopener" hidden>Open in new tab</a>
+    <button id="viewerAsk" class="primary">Ask about this file</button>
+    <button id="viewerClose">Close</button>
+  </div>
+</dialog>
+
+<dialog id="taskViewer">
+  <header><h2 id="tvTitle"></h2><span id="tvMeta"></span></header>
+  <div class="tv-body"><div id="tvEvents" class="tv-events"></div><div id="tvResult" class="body"></div></div>
+  <div class="dialog-actions"><span id="tvActions"></span><button id="tvClose">Close</button></div>
+</dialog>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

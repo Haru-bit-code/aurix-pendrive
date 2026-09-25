@@ -1,0 +1,22 @@
+# Models and binaries — downloaded separately, see README
+models/
+models-extra/
+bin/
+
+# Personal data: chat history, settings (including any API keys), logs, uploaded files
+data/
+
+# Python
+__pycache__/
+*.pyc
+.DS_Store
+
+
+# macOS/Windows drive junk
+._*
+.DS_Store
+.Spotlight-V100/
+.TemporaryItems/
+.Trashes/
+.fseventsd/
+System Volume Information/
